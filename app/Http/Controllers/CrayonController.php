@@ -15,6 +15,10 @@ class CrayonController extends Controller
         return view('crayons.index', compact('crayons'));
     }
 
+    public function donothing(\App\Services\RSAService $rsa){
+        $rsa->doUselessRSAWork();
+    }
+
     // Afficher le formulaire de création de crayon
     public function create()
     {
