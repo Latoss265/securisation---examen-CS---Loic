@@ -6,6 +6,7 @@ namespace Database\Seeders;
 use App\Models\Crayon;
 use Illuminate\Database\Seeder;
 use Faker\Factory as Faker;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -24,17 +25,17 @@ class DatabaseSeeder extends Seeder
         \App\Models\User::factory()->create([
             'name' => 'Alice',
             'email' => 'alice@email.com',
-            'password' => 'Password1'
+            'password' => Hash::make('SingeDictionnaireRoueLuxe')
         ]);
         \App\Models\User::factory()->create([
             'name' => 'Bob',
             'email' => 'bob@example.com',
-            'password' => 'Superman'
+            'password' => Hash::make('GorilleLivreTableMaison')
         ]);
         \App\Models\User::factory()->create([
             'name' => 'Gordon',
             'email' => 'gb@mail.com',
-            'password' => '123456'
+            'password' => Hash::make('GorilleLivreTableMaison')
         ]);
     }
 }

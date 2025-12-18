@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Crayon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class CrayonController extends Controller
 {
@@ -42,19 +43,33 @@ class CrayonController extends Controller
     }
 
     // Afficher le formulaire de modification de crayon
-    public function edit($id)
+    public function edit($id, Request $request)
     {
         try {
             session_start();
         }
         catch (\Exception){}
-        if($_SESSION['login'] == 'true'){
-            $crayon = Crayon::findOrFail($id);
-            return view('crayons.edit', compact('crayon'));
+        if (isset($_SESSION['login'])) {
+            if($_SESSION['login'] == 'true'){
+                $token = $request->cookie('token');
+                if ($this->decodeJWT($token) !== null && $this->decodeJWT($token)->role == 'user')
+                {
+
+                    $crayon = Crayon::findOrFail($id);
+                    return view('crayons.edit', compact('crayon'));
+                }
+                else {
+                    return redirect('/login');
+                }
+            }
+            else{
+                return redirect('/login');
+            }
         }
-        else{
-            return redirect('/');
+        else {
+            return redirect('/login');
         }
+
     }
 
     // Mettre à jour les informations du crayon dans la base de données
@@ -65,37 +80,92 @@ class CrayonController extends Controller
             'quantite' => 'required|integer|min:0',
         ]);
 
-        $crayon = Crayon::findOrFail($id);
-        $crayon->update([
-            'nom' => $request->input('nom'),
-            'quantite' => $request->input('quantite'),
-        ]);
-
-        return redirect('/crayons')->with('success', 'Crayon mis à jour avec succès');
+        $token = $request->cookie('token');
+        if ($this->decodeJWT($token) !== null  && $this->decodeJWT($token)->role == 'user')
+        {
+            $crayon = Crayon::findOrFail($id);
+            $crayon->update([
+                'nom' => $request->input('nom'),
+                'quantite' => $request->input('quantite'),
+            ]);
+            return redirect('/crayons')->with('success', 'Crayon mis à jour avec succès');
+        }
+        else {
+            abort(403);
+        }
     }
 
     // Supprimer un crayon de la base de données
-    public function destroy($id)
+    public function destroy($id, Request $request)
     {
         try {
             session_start();
         }
         catch (\Exception){}
-        if($_SESSION['login'] == 'true'){
-            $crayon = Crayon::findOrFail($id);
-            $crayon->delete();
+        if (isset($_SESSION['login'])) {
+            if($_SESSION['login'] == 'true'){
+                $token = $request->cookie('token');
+                if ($this->decodeJWT($token) !== null  && $this->decodeJWT($token)->role == 'user') {
+                    $crayon = Crayon::findOrFail($id);
+                    $crayon->delete();
+                    return redirect('/crayons')->with('success', 'Crayon supprimé avec succès');
+                }
+                else {
+                    return redirect('/login');
+                }
+            }
+            else{
+                return redirect('/login');
+            }
+        }
+        else {
+            return redirect('/login');
+        }
 
-            return redirect('/crayons')->with('success', 'Crayon supprimé avec succès');
-        }
-        else{
-            return redirect('/');
-        }
     }
 
     public function search(Request $request){
         $crayons = DB::table('crayons')
-            ->where('nom', 'like', DB::raw('"%' . $request->texte . '%"'))
+            ->where('nom', 'like', "%".$request->texte."%")
             ->get();
         return view('crayons.index', compact('crayons'));
     }
+
+    /**
+     * Vérifie que le token JWT est valide
+     * Repris de des revisions JWT
+     */
+    function decodeJWT($token) {
+        try {
+            $parts = explode('.', $token);
+            if(isset($parts[0])){
+                $header = $parts[0];
+            }
+            else {
+                return null;
+            }
+            if(isset($parts[1])){
+                $payload = $parts[1];
+                $data = json_decode(base64_decode($payload));
+            }
+            else {
+                return null;
+            }
+            if(isset($parts[2])){
+                $decodedSignature = $parts[2];
+            }
+            else {
+                return null;
+            }
+        }
+        catch(Exception $exception) {
+            return null;
+        }
+        if (!Hash::check($header.$payload, base64_decode($decodedSignature))) {
+            return null;
+        } else {
+            return $data;
+        }
+    }
+
 }
