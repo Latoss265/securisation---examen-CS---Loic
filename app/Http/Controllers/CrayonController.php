@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\RSAService;
 use Illuminate\Http\Request;
 use App\Models\Crayon;
 use Illuminate\Support\Facades\DB;
@@ -10,10 +11,13 @@ use Illuminate\Support\Facades\Hash;
 class CrayonController extends Controller
 {
     // Afficher la liste des crayons
-    public function index()
+    public function index(RSAService $rsa)
     {
         $crayons = Crayon::all();
-        return view('crayons.index', compact('crayons'));
+        $chiffre_crayon = Crayon::all()->random();
+        $chiffre_crayon = base64_encode($rsa->chiffrer($chiffre_crayon->nom));
+        $dechiffre_crayon = $rsa->dechiffrer(base64_decode($chiffre_crayon));
+        return view('crayons.index', compact('crayons'))->with('chiffre_crayon', $chiffre_crayon)->with('dechiffre_crayon', $dechiffre_crayon);
     }
 
     public function donothing(\App\Services\RSAService $rsa){

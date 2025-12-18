@@ -43,4 +43,6 @@
     </table>
 
     <a href="{{ route('crayons.create') }}">Ajouter un crayon</a>
+    <p>Crayon chiffrée : {{$chiffre_crayon}}</p>
+    <p>Crayon déchiffrée : {{$dechiffre_crayon}}</p>
 @endsection
